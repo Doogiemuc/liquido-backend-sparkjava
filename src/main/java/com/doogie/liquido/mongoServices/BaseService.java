@@ -1,18 +1,17 @@
 package com.doogie.liquido.mongoServices;
 
-import com.doogie.liquido.LiquidoBackendSpark;
 import com.doogie.liquido.models.HasId;
 import com.doogie.liquido.models.Validable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.util.JSONParseException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -21,10 +20,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class BaseService<T extends Validable & HasId> {
-  Logger log = LoggerFactory.getLogger(LiquidoBackendSpark.class);  // Simple Logging Facade 4 Java
+  Logger log = LoggerFactory.getLogger(BaseService.class);  // Simple Logging Facade 4 Java
   MongoCollection<Document> col;
   ObjectMapper mapper;
   final Class<T> modelClazz;
@@ -42,35 +40,43 @@ public class BaseService<T extends Validable & HasId> {
     this.gson = gsonBuilder.create();
   }
 
-  public String toJson(T model) throws Exception {
-    try {
-      return gson.toJson(model);
-    } catch (JSONParseException e) {
-      throw new Exception("Cannot convert area to json", e);
-    }
-
+  public String toJson(T model) {
+    return gson.toJson(model);
   }
 
   public T fromJson(String json) throws Exception {
     try {
       return gson.fromJson(json, modelClazz);
       //return mapper.readValue(json, modelClazz);
-    } catch (Exception e) {
+    } catch (JsonSyntaxException e) {
       throw new Exception("fromJson(): Cannot convert json to Area: "+json, e);
     }
   }
 
+  /**
+   * get all models from the DB as domain objects
+   * mapped with GSON.
+   * @return
+   * @throws Exception
+   */
   public List<T> getAll() throws Exception {
     log.trace(col.getNamespace().getCollectionName() + " getAll()");
     FindIterable<Document> allAreaDocs = col.find();
     List<T> result = new ArrayList<>();
     for (Document areaDoc : allAreaDocs) {
+
+      //MAYBE: areaDoc.entrySet()  => then create object from keySet
+
       result.add(fromJson(areaDoc.toJson()));
     }
     return result;
   }
 
-  public String getAllAsJson() {
+  /**
+   * get all models in the extends JSON format that mongo-java-driver returns
+   * @return
+   */
+  public String getAllAsMongoJson() {
     FindIterable<Document> allAreaDocs = col.find();
     List<String> allAsJson = new ArrayList<>();
     for (Document areaDoc : allAreaDocs) {
@@ -93,36 +99,65 @@ public class BaseService<T extends Validable & HasId> {
     if (!model.isValid()) {
       throw new Exception("Cannot insert: Areas is invalid");
     }
+    //TODO: check for "fachlichen Schlüssel"  and then do not insert twice!!
+
     //nice and short: http://stackoverflow.com/questions/739689/how-to-convert-a-java-object-bean-to-key-value-pairs-and-vice-versa
-    Map<String, Object> areaAsMap = mapper.convertValue(model, Map.class);
-    col.insertOne(new Document(areaAsMap));
+    //with jaxon mapper
+    //Map<String, Object> areaAsMap = mapper.convertValue(model, Map.class);
+    //and then    new Document(areaAsMap)     instead of Document.parse(json)
+
+    String json = gson.toJson(model);
+    col.insertOne(Document.parse(json));
+  }
+
+
+  /*
+  public void updateOne(T model) throws Exception {
+    Bson query  = Filters.eq("_id", new ObjectId(model.getId()))
+
+    //You cannot simply send Document.parse(toJson(model))  because that would have _id in it. Mongo requires its "$set" syntax,
+    //that can be generated like this:
+    Bson update = Updates.combine(
+      Updates.set("title", "updated title"),
+      Updates.currentDate("updatedAt")
+    );
+
+    col.updateOne(query, update);
+  }
+  */
+
+  public void upsert(T model) throws Exception {
+    // the parent class must provide an implementation for
+    //Bson getEqualityFilter(model)
+
+    if (model.getId() == null) {
+      //TODO: then insert
+    } else {
+      String json = gson.toJson(model);
+      col.replaceOne(
+        Filters.eq("_id", new ObjectId(model.getId())),
+        Document.parse(json),
+        new UpdateOptions().upsert(true).bypassDocumentValidation(false)
+      );
+    }
   }
 
   /**
-   * Replace an existing document in the DB.
-   *
-   * @param id   ObjectId of an existing document.
-   * @param json new values that will (completely!) replace the old object. json should not contain any ID
+   * replaces the given model with its new data.
+   * @param model Model class including its ID field!
+   * @throws Exception when ID is not filled
    */
-  public void replace(String id, String json) throws Exception {
-    if (Strings.isNullOrEmpty(id)) throw new Exception("Cannot replace area without id");
-    col.replaceOne(
-      Filters.eq("_id", new ObjectId(id)),
-      Document.parse(json),
-      new UpdateOptions().upsert(true).bypassDocumentValidation(false)
-    );
-  }
-
   public void replace(T model) throws Exception {
+    if (Strings.isNullOrEmpty(model.getId())) throw new Exception("Cannot replace model without id");
     String json = toJson(model);
-    this.replace(model.getId(), json);
+    col.replaceOne(
+      Filters.eq("_id", new ObjectId(model.getId())),
+      Document.parse(json),
+      new UpdateOptions().upsert(false).bypassDocumentValidation(false)
+    );
   }
 
-  public void updateOne(T model) throws Exception {
-    String json = toJson(model);
-    col.updateOne(
-      Filters.eq("_id", new ObjectId(model.getId())),
-      Document.parse(json)
-    );
+  public long count() {
+    return col.count();
   }
 }

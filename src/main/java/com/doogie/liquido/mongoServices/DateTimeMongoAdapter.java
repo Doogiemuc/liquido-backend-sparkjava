@@ -17,6 +17,10 @@ import java.util.Date;
 public class DateTimeMongoAdapter extends TypeAdapter<Date> {
   @Override
   public void write(JsonWriter jsonWriter, Date date) throws IOException {
+    if (date == null) {
+      jsonWriter.nullValue();
+      return;
+    }
     jsonWriter.beginObject();
     jsonWriter.name("$date");
     jsonWriter.value(date.getTime());

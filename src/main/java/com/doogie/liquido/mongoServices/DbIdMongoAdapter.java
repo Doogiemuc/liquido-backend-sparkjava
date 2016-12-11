@@ -16,6 +16,11 @@ import java.io.IOException;
 public class DbIdMongoAdapter extends TypeAdapter<DbId> {
   @Override
   public void write(JsonWriter jsonWriter, DbId dbId) throws IOException {
+    if (dbId == null) {
+      System.err.println("WARNING: ObjectId is null   in DbIdMongoAdapter write");
+      jsonWriter.nullValue();
+      return;
+    }
     jsonWriter.beginObject();
     jsonWriter.name("$oid");
     jsonWriter.value(dbId.getIdAsHex());

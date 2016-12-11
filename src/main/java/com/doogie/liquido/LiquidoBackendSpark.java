@@ -8,8 +8,6 @@ import com.mongodb.client.MongoDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 import static spark.Spark.get;
 import static spark.Spark.post;
 
@@ -36,7 +34,7 @@ public class LiquidoBackendSpark {
     // get all post (using HTTP get method)
     get("/areas", (request, response) -> {
       log.info("=> GET /areas");
-      String json = areaService.getAllAsJson();
+      String json = areaService.getAllAsMongoJson();
 
       /*
       List<AreaModel> allAreas = areaService.getAll();
