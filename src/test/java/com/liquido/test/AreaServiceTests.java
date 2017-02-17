@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpsertTest {
+public class AreaServiceTests {
   Logger log = LoggerFactory.getLogger(this.getClass());  // Simple Logging Facade 4 Java
 
   AreaService areaService;

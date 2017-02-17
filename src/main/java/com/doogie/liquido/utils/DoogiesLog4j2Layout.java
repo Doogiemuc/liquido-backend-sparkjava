@@ -28,7 +28,7 @@ public class DoogiesLog4j2Layout extends AbstractStringLayout {
     }
 
     /**
-     * This is territble imperformant, does implicit casting of strings
+     * This is territble inperformant, does implicit casting of strings
      * but creates really nicely aligned log messages :-)
      * @param logEvent the log4j logEvent which includes amongst others the log message
      * @return a nicely formatted String for the console log

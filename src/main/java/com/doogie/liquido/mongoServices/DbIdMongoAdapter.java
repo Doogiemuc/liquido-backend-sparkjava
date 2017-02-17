@@ -7,7 +7,7 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 
 /**
- * (de)serialization between mongoDB ObjectId and its JSON representation as mongo (java driver) returns it:
+ * GSON (de)serialization between mongoDB ObjectId and its JSON representation as mongo (java driver) returns it:
  * <pre>
  *   "_id": { "$oid": "57892d793d5b352b9b0134be" }
  * </pre>

@@ -2,7 +2,6 @@ package com.doogie.liquido;
 
 import com.doogie.liquido.models.AreaModel;
 import com.doogie.liquido.mongoServices.AreaService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import org.slf4j.Logger;
@@ -56,9 +55,7 @@ public class LiquidoBackendSpark {
 
     post("/areas", (request, response) -> {
       try {
-        ObjectMapper mapper = new ObjectMapper();
-        AreaModel newArea = mapper.readValue(request.body(), AreaModel.class);
-        areaService.insert(newArea);
+        areaService.insert(areaService.fromJson(request.body()));
         response.status(200);
         response.type("application/json");
         return "Successfully saved area.";

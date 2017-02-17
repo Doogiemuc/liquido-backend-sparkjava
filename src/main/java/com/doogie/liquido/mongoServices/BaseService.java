@@ -1,5 +1,6 @@
 package com.doogie.liquido.mongoServices;
 
+import com.doogie.liquido.models.AreaModel;
 import com.doogie.liquido.models.HasId;
 import com.doogie.liquido.models.Validable;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +13,10 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import org.bson.BsonReader;
 import org.bson.Document;
+import org.bson.codecs.Decoder;
+import org.bson.codecs.DecoderContext;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,9 +109,8 @@ public class BaseService<T extends Validable & HasId> {
     //with jaxon mapper
     //Map<String, Object> areaAsMap = mapper.convertValue(model, Map.class);
     //and then    new Document(areaAsMap)     instead of Document.parse(json)
-
     String json = gson.toJson(model);
-    col.insertOne(Document.parse(json));
+    col.insertOne(Document.parse(json));      // May throw MongoWriteException for DUPLICATE_KEY
   }
 
 

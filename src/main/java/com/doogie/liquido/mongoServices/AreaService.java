@@ -12,6 +12,8 @@ import org.bson.types.ObjectId;
 
 import java.util.Date;
 
+//TODO: have a look at MongoDB Codecs http://matteosilvestri.blogspot.de/2015/03/overview-of-pluggable-codecs-in-mongodb.html
+
 public class AreaService extends BaseService<AreaModel> {
 
   public AreaService(MongoDatabase database) {
